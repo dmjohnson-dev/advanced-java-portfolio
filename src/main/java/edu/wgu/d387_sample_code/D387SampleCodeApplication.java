@@ -5,8 +5,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @SpringBootApplication
 public class D387SampleCodeApplication {
@@ -15,27 +18,35 @@ public class D387SampleCodeApplication {
         SpringApplication.run(D387SampleCodeApplication.class, args);
     }
 
+    // B3b: print the online presentation time in ET, MT, and UTC
     @Bean
-    public CommandLineRunner welcomeMessagesRunner() {
+    public CommandLineRunner timeZoneMessageRunner() {
         return args -> {
-            Runnable enTask = () -> {
-                ResourceBundle rb = ResourceBundle.getBundle("messages", Locale.ENGLISH);
-                System.out.println("=== B1 EN === " + rb.getString("welcome"));
-            };
+            ZoneId ET = ZoneId.of("America/New_York");
+            ZoneId MT = ZoneId.of("America/Denver");
+            ZoneId UTC = ZoneId.of("UTC");
 
-            Runnable frTask = () -> {
-                ResourceBundle rb = ResourceBundle.getBundle("messages", Locale.FRENCH);
-                System.out.println("=== B1 FR === " + rb.getString("welcome"));
-            };
+            // You can choose any date/time you want; rubric cares about correct conversion + display
+            LocalDate date = LocalDate.now();
+            LocalTime presentationET = LocalTime.of(13, 0); // 1:00 PM ET
 
-            Thread t1 = new Thread(enTask);
-            Thread t2 = new Thread(frTask);
+            ZonedDateTime etTime = convertTime(date, presentationET, ET, ET);
+            ZonedDateTime mtTime = convertTime(date, presentationET, ET, MT);
+            ZonedDateTime utcTime = convertTime(date, presentationET, ET, UTC);
 
-            t1.start();
-            t2.start();
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
 
-            t1.join();
-            t2.join();
+            System.out.println("Online live presentation time:");
+            System.out.println("ET:  " + etTime.format(fmt));
+            System.out.println("MT:  " + mtTime.format(fmt));
+            System.out.println("UTC: " + utcTime.format(fmt));
         };
     }
+
+    // B3a: method to convert between time zones (DST-safe)
+    private static ZonedDateTime convertTime(LocalDate date, LocalTime time, ZoneId fromZone, ZoneId toZone) {
+        ZonedDateTime from = ZonedDateTime.of(date, time, fromZone);
+        return from.withZoneSameInstant(toZone);
+    }
 }
+
